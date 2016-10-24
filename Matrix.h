@@ -12,12 +12,14 @@ class Matrix {
 public:
     Matrix(size_t n = 0, size_t m = 0);
     Matrix(const Matrix &mt);
+    Matrix(Matrix &&mt);
     ~Matrix();
     bool operator==(const Matrix &mt) const;
     bool operator!=(const Matrix &mt) const;
     Matrix& operator=(const Matrix &mt);
+    Matrix& operator=(Matrix &&mt);
     T* operator[](int i);
-    int getIJ(int i, int j) const;
+    T getIJ(int i, int j) const;
     void setIJ(int i, int j, T val);
     const Matrix operator-() const;
     const Matrix operator+() const;
@@ -31,6 +33,7 @@ public:
     Matrix& operator/=(const T &x);
     Matrix operator*(const Matrix &mt) const;
     Matrix& operator*=(const Matrix &mt);
+    void swap(Matrix &other);
     size_t getHeight();
     size_t getWidth();
 private:
@@ -45,11 +48,11 @@ Matrix<T>::Matrix(size_t n, size_t m) : n(n), m(m) {
         matr[i] = m ? (new T[m]) : 0;
     for (int i = 0; i < n; ++i)
         for (int j = 0; j < m; ++j)
-            matr[i][j] = 0;                             //optimize
+            matr[i][j] = 0;
 }
 
 template <class T>
-Matrix<T>::Matrix(const Matrix &mt) {
+Matrix<T>::Matrix(const Matrix<T> &mt) {
     n = mt.n;
     m = mt.m;
     matr = n ? (new T*[n]) : 0;
@@ -63,6 +66,14 @@ Matrix<T>::Matrix(const Matrix &mt) {
 }
 
 template <class T>
+Matrix<T>::Matrix(Matrix<T> &&mt) {
+    matr = mt.matr;
+    n = mt.n;
+    m = mt.m;
+    mt.matr = 0;
+}
+
+template <class T>
 Matrix<T>::~Matrix() {
     for (int i = 0; i < n; ++i)
         if (matr[i])
@@ -72,7 +83,7 @@ Matrix<T>::~Matrix() {
 }
 
 template <class T>
-bool Matrix<T>::operator==(const Matrix &mt) const {
+bool Matrix<T>::operator==(const Matrix<T> &mt) const {
     if (n != mt.n || m != mt.m)
         return false;
     for (int i = 0; i < n; ++i)
@@ -83,7 +94,7 @@ bool Matrix<T>::operator==(const Matrix &mt) const {
 }
 
 template <class T>
-bool Matrix<T>::operator!=(const Matrix &mt) const {
+bool Matrix<T>::operator!=(const Matrix<T> &mt) const {
     if (n != mt.n || m != mt.m)
         return true;
     for (int i = 0; i < n; ++i)
@@ -94,23 +105,18 @@ bool Matrix<T>::operator!=(const Matrix &mt) const {
 }
 
 template <class T>
-Matrix<T>& Matrix<T>::operator=(const Matrix &mt) {
+Matrix<T>& Matrix<T>::operator=(const Matrix<T> &mt) {
     if (this != &mt) {
-        for (int i = 0; i < n; ++i)
-            if (matr[i])
-                delete[] matr[i];
-        if (matr)
-            delete[] matr;
-        n = mt.n;
-        m = mt.m;
-        matr = n ? (new T*[n]) : 0;
-        for (int i = 0; i < n; ++i)
-            matr[i] = m ? (new T[m]) : 0;
-        for (int i = 0; i < n; ++i)
-            for (int j = 0; j < m; ++j)
-                matr[i][j] = mt.matr[i][j];
+        Matrix<T> copied(mt);
+        this->swap(copied);
     }
     return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator=(Matrix &&mt) {
+    swap(mt);
+    return (*this);
 }
 
 template <class T>
@@ -123,7 +129,7 @@ T* Matrix<T>::operator[](int i) {
 }
 
 template <class T>
-int Matrix<T>::getIJ(int i, int j) const {
+T Matrix<T>::getIJ(int i, int j) const {
     if (i < 0 || j < 0 || i >= n || j >= m) {
         std::cerr << "Index error in getIJ\n";
         exit(1);
@@ -197,7 +203,7 @@ Matrix<T> Matrix<T>::operator/(const T &x) const {
 }
 
 template <class T>
-Matrix<T>& Matrix<T>::operator+=(const Matrix &mt) {
+Matrix<T>& Matrix<T>::operator+=(const Matrix<T> &mt) {
     if (n != mt.n || m != mt.m) {
         std::cerr << "Error operator += do not match the dimensions of the matrices\n";
     }
@@ -208,7 +214,7 @@ Matrix<T>& Matrix<T>::operator+=(const Matrix &mt) {
 }
 
 template <class T>
-Matrix<T>& Matrix<T>::operator-=(const Matrix &mt) {
+Matrix<T>& Matrix<T>::operator-=(const Matrix<T> &mt) {
     if (n != mt.n || m != mt.m) {
         std::cerr << "Error operator -= do not match the dimensions of the matrices\n";
     }
@@ -277,6 +283,13 @@ Matrix<T>& Matrix<T>::operator*=(const Matrix &mt) {
     m = mt.m;
     matr = ans;
     return *this;
+}
+
+template <class T>
+void Matrix<T>::swap(Matrix<T> &other) {
+    std::swap(n, other.n);
+    std::swap(m, other.m);
+    std::swap(matr, other.matr);
 }
 
 template <class T>
